@@ -1,28 +1,25 @@
+import json
 import pandas as pd
+import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import streamlit as st
 
-# --- CONFIGURACIÓN ---
-SHEET_URL = "https://docs.google.com/spreadsheets/d/14Iw0tKrbcqeC-xGkTABUS2gjG2OJYA18iAzb8X-ma-U/edit#gid=396533980"
-SHEET_NAME = "Ponderador IPC 19-25"
-CREDENTIALS_FILE = "sofia-454214-d2cad15f9b9d.json"
-
-# --- CONEXIÓN ---
+# Leer credenciales desde secrets
+creds_dict = json.loads(st.secrets["gcp_service_account"])
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 client = gspread.authorize(creds)
 
-# Abrir hoja
+SHEET_URL = st.secrets["SHEET_URL"]
+SHEET_NAME = st.secrets["SHEET_NAME"]
+
+# Cargar datos
 worksheet = client.open_by_url(SHEET_URL).worksheet(SHEET_NAME)
 data = worksheet.get_all_values()
-
-# DataFrame
 df = pd.DataFrame(data)
 df.columns = df.iloc[0]
 df = df.drop(0).reset_index(drop=True)
 
-# --- FUNCIÓN ---
 def obtener_ponderador(mes_base, mes_destino):
     try:
         fila = df[df[df.columns[0]] == mes_base]
@@ -33,15 +30,15 @@ def obtener_ponderador(mes_base, mes_destino):
     except KeyError:
         return None
 
-# --- INTERFAZ STREAMLIT ---
 st.title("Calculadora de Ponderadores IPC 🇦🇷")
-
 mes_base = st.selectbox("Mes base", df[df.columns[0]].tolist())
 mes_destino = st.selectbox("Mes destino", df.columns[1:].tolist())
 
 if st.button("Calcular ponderador"):
-    ponderador = obtener_ponderador(mes_base, mes_destino)
-    if ponderador is not None:
-        st.success(f"Ponderador de {mes_base} a {mes_destino}: {ponderador}")
+    p = obtener_ponderador(mes_base, mes_destino)
+    if p is not None:
+        st.success(f"Ponderador de {mes_base} a {mes_destino}: {p}")
     else:
         st.error("No se encontró el ponderador para esa combinación.")
+
+
