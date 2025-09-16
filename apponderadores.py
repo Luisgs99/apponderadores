@@ -37,8 +37,9 @@ mes_destino = st.selectbox("Mes destino", df.columns[1:].tolist())
 if st.button("Calcular ponderador"):
     p = obtener_ponderador(mes_base, mes_destino)
     if p is not None:
-        st.success(f"Ponderador de {mes_base} a {mes_destino}: {p}")
+        st.success(f"Para actualizar un valor desde el {mes_base} al {mes_destino} tenés que multiplicarlo por: {p}")
     else:
         st.error("No se encontró el ponderador para esa combinación.")
+
 
 
